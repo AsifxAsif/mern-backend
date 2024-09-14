@@ -8,10 +8,11 @@ import myRestaurantRoute from "./routes/MyRestaurantRoute";
 import restaurantRoute from "./routes/RestaurantRoute";
 import orderRoute from "./routes/OrderRoute";
 
-mongoose
-  .connect(process.env.MONGODB_CONNECTION_STRING as string)
-  .then(() => console.log("Connected to database!"));
+mongoose.default.connect(process.env.MONGODB_CONNECTION_STRING as string)
+  .then(() => console.log("Connected to database!"))
+  .catch((err) => console.error("Database connection error:", err));
 
+const cloudinary_1 = require("cloudinary").v2;
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -35,6 +36,8 @@ app.use("/api/my/restaurant", myRestaurantRoute);
 app.use("/api/restaurant", restaurantRoute);
 app.use("/api/order", orderRoute);
 
-app.listen(7000, () => {
-  console.log("server started on localhost:7000");
+const PORT = process.env.PORT || 7000;
+app.listen(PORT, () => {
+  console.log(`server started on localhost:${PORT}`);
 });
+
