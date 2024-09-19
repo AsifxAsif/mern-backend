@@ -51,13 +51,21 @@ const stripeWebhookHandler = async (req: Request, res: Response) => {
   }
 
   if (event.type === "checkout.session.completed") {
-    const order = await Order.findById(event.data.object.metadata?.orderId);
+    const session = event.data.object as Stripe.Checkout.Session;
+
+    // Check if amount_total exists
+    if (session.amount_total === null || session.amount_total === undefined) {
+      return res.status(400).send("Invalid amount_total");
+    }
+
+    const order = await Order.findById(session.metadata?.orderId);
 
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
 
-    order.totalAmount = event.data.object.amount_total;
+    // Convert amount_total to BDT if needed
+    order.totalAmount = session.amount_total / 100; // Convert from poisha to BDT
     order.status = "paid";
 
     await order.save();
@@ -127,7 +135,7 @@ const createLineItems = (
     const line_item: Stripe.Checkout.SessionCreateParams.LineItem = {
       price_data: {
         currency: "bdt",
-        unit_amount: menuItem.price,
+        unit_amount: menuItem.price * 100,
         product_data: {
           name: menuItem.name,
         },
@@ -155,7 +163,7 @@ const createSession = async (
           display_name: "Delivery",
           type: "fixed_amount",
           fixed_amount: {
-            amount: deliveryPrice,
+            amount: deliveryPrice * 100,
             currency: "bdt",
           },
         },
